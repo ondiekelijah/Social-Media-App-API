@@ -16,6 +16,7 @@ class Post(BaseModel):
     content: str
     published: bool = True
 
+
 while True:
     try:
         # Connect to your postgres DB
@@ -64,16 +65,20 @@ def get_posts():
     # Open a cursor to perform database operations
     cur.execute(""" SELECT * FROM posts """)
     # Retrieve query results
-    posts  = cur.fetchall()
+    posts = cur.fetchall()
     return {"data": posts}
 
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
 def create_posts(post: Post):
-    post_dict = post.dict()
-    post_dict["id"] = randrange(0, 100000)
-    my_posts.append(post_dict)
-    return {"data": post_dict}
+    cur.execute(
+        """ INSERT INTO posts (title,content,published) VALUES(%s,%s,%s) RETURNING * """,
+        (post.title, post.content, post.published),
+    )
+    conn.commit()
+    new_post = cur.fetchone()
+
+    return {"data": new_post}
 
 
 @app.get("/posts/latest")
@@ -84,7 +89,11 @@ def get_latest_post():
 
 @app.get("/posts/{id}")
 def get_post(id: int):
-    post = find_post(id)
+
+    cur.execute(""" SELECT * FROM posts WHERE id = %s """, (str(id)))
+    post = cur.fetchone()
+    conn.commit()
+
     if not post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -97,28 +106,35 @@ def get_post(id: int):
 
 @app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(id: int):
-    index = find_index_post(id)
-    if index == None:
+
+    cur.execute(""" DELETE FROM posts WHERE id = %s RETURNING * """, (str(id)))
+    post = cur.fetchone()
+    conn.commit()
+
+    if post == None:
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"post with id:{id} was not found",
         )
-    my_posts.pop(index)
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @app.put("/posts/{id}")
 def update_post(id: int, post: Post):
-    index = find_index_post(id)
 
-    if index == None:
+    cur.execute(
+        """ UPDATE posts SET title = %s , content = %s ,published = %s WHERE id = %s RETURNING * """,
+        (post.title, post.content, post.published, str(id)),
+    )
+    post = cur.fetchone()
+    conn.commit()
+
+    if post == None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"post with id:{id} was not found",
         )
 
-    post_dict = post.dict()
-    post_dict["id"] = id
-    my_posts[index] = post_dict
-
-    return {"data": post_dict}
+    return {"data": post}
