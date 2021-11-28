@@ -3,6 +3,9 @@ from fastapi.params import Body
 from pydantic import BaseModel
 from typing import Optional
 from random import randrange
+import psycopg2
+import psycopg2.extras
+import time
 
 
 app = FastAPI()
@@ -12,7 +15,25 @@ class Post(BaseModel):
     title: str
     content: str
     published: bool = True
-    rating: Optional[int] = None
+
+while True:
+    try:
+        # Connect to your postgres DB
+        conn = psycopg2.connect(
+            host="localhost",
+            database="fastapi",
+            user="postgres",
+            password="ondie",
+        )
+        # Open a cursor to perform database operations
+        cur = conn.cursor()
+        print("Connected to a database!")
+        break
+
+    except Exception as error:
+        print("Error connecting to the database")
+        print("Error ", error)
+        time.sleep(2)
 
 
 my_posts = [
@@ -40,7 +61,11 @@ def read_root():
 
 @app.get("/posts")
 def get_posts():
-    return {"data": my_posts}
+    # Open a cursor to perform database operations
+    cur.execute(""" SELECT * FROM posts """)
+    # Retrieve query results
+    posts  = cur.fetchall()
+    return {"data": posts}
 
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
@@ -82,9 +107,8 @@ def delete_post(id: int):
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-
 @app.put("/posts/{id}")
-def update_post(id: int, post:Post):
+def update_post(id: int, post: Post):
     index = find_index_post(id)
 
     if index == None:
@@ -94,8 +118,7 @@ def update_post(id: int, post:Post):
         )
 
     post_dict = post.dict()
-    post_dict['id'] = id
+    post_dict["id"] = id
     my_posts[index] = post_dict
-
 
     return {"data": post_dict}
