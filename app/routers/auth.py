@@ -6,7 +6,7 @@ from .. import database,schemas,models,utils,oath2
 
 router = APIRouter(tags=['Authentication'])
 
-@router.post('/login')
+@router.post('/login', response_model=schemas.Token)
 def login(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db )):
 
     # OAuth2PasswordRequestForm returns
@@ -33,6 +33,6 @@ def login(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session =
 
     access_token = oath2.create_access_token(data={"user_id":user.id})
 
-    return {"access token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer"}
 
 # Create a token
