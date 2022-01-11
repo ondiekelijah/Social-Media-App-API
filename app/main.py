@@ -29,4 +29,4 @@ app.include_router(vote.router)
 
 @app.get("/")
 def read_root():
-    return {"Introduction to": "FastAPI"}
+    return {"message": "This is a social media API, follow me on Twitter @dev_elie"}
