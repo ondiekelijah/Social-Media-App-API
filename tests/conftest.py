@@ -9,6 +9,8 @@ from app.main import app
 from app.config import settings
 from app.database import get_db
 from app.database import Base
+from app.oath2 import create_access_token
+from app import models
 from alembic import command
 
 
@@ -62,3 +64,57 @@ def test_user(client):
     new_user["password"] = user_data["password"]
     assert res.status_code == 201
     return new_user
+
+
+@pytest.fixture()
+def test_user2(client):
+    user_data = {"email": "test2@gmail.com", "password": "test123"}
+    res = client.post("/users/", json=user_data)
+    new_user = res.json()
+    new_user["password"] = user_data["password"]
+    assert res.status_code == 201
+    return new_user
+
+
+@pytest.fixture()
+def token(test_user):
+    return create_access_token({"user_id": test_user["id"]})
+
+
+@pytest.fixture()
+def authorized_client(client, token):
+    """
+    Takes original client and adds the token from the token fixture - adds the
+    Authorization header
+    """
+    # Update the headers so that it contains a token
+    client.headers = {**client.headers, "Authorization": f"Bearer {token}"}
+    return client
+
+
+@pytest.fixture()
+def test_posts(test_user, test_user2, session):
+    posts_data = [
+        {
+            "title": "first title",
+            "content": "first content",
+            "owner_id": test_user["id"],
+        },
+        {"title": "2nd title", "content": "2nd content", "owner_id": test_user["id"]},
+        {"title": "3rd title", "content": "3rd content", "owner_id": test_user["id"]},
+        {"title": "4th title", "content": "4th content", "owner_id": test_user2["id"]},
+    ]
+
+    def create_post_model(post):
+        return models.Post(**post)
+
+    mapped_posts = map(create_post_model, posts_data)
+    posts = list(mapped_posts)
+
+    session.add_all(posts)
+    session.commit()
+
+    posts = session.query(models.Post).all()
+
+    # Returns an sqlalchemy model
+    return posts
