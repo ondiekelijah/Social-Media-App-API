@@ -50,10 +50,17 @@ def get_posts(
 
 
 # Fetch posts by user id
-@router.get("/users/{id}", response_model=List[schemas.Post])
+@router.get("/users/{id}", response_model=List[schemas.PostOut])
 def get_user_posts(id: int, db: Session = Depends(get_db)):
 
     posts = db.query(models.Post).filter(models.Post.owner_id == id).all()
+
+    if not posts:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Posts from user with id:{id} not available",
+        )
+
     return posts
 
 

@@ -20,7 +20,7 @@ def test_get_all_posts(client, test_posts):
     assert res.status_code == 200
 
 
-def test_user_get_one_post(client, test_posts):
+def test_get_one_post(client, test_posts):
     res = client.get(f"posts/{test_posts[0].id}")
     assert res.status_code == 200
 
@@ -30,6 +30,23 @@ def test_user_get_one_post(client, test_posts):
     assert post.Post.id == test_posts[0].id
     assert post.Post.content == test_posts[0].content
     assert post.Post.title == test_posts[0].title
+
+# def test_get_user_posts(client, test_posts, test_user):
+#     res = client.get(f"posts/users/{test_user.id}")
+#     assert res.status_code == 200
+
+#     def validate(post):
+#         """
+#         Posts validation using a schema, takes a
+#         list of dict >> a list of schema models
+#         """
+#         return schemas.PostOut(**post)
+
+#     mapped_test_posts = map(validate, res.json())
+#     posts_list = list(mapped_test_posts)
+
+#     assert len(res.json()) == len(test_posts)
+#     assert res.status_code == 200
 
 
 def test_get_one_post_not_exist(client, test_posts):
