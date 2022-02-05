@@ -172,5 +172,6 @@ def update_post(
         updated_post.dict(),
         synchronize_session=False,
     )
+    
     db.commit()
     return post_query.first()

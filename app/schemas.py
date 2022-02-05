@@ -42,9 +42,7 @@ class PostBase(BaseModel):
 class PostCreate(PostBase):
     pass
 
-
 # Handles us sending back data to the users
-
 
 class Post(PostBase):
     id: int
