@@ -24,7 +24,7 @@ jobs:
           POSTGRES_DB: ${{secrets.DATABASE_NAME}}_test
           POSTGRES_USER: ${{secrets.DATABASE_USERNAME}}
         ports:
-          - 5432:5432
+          - 5433:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
